@@ -16,9 +16,12 @@
     "@hono/node-server": "^1.15.0",
     "@prisma/client": "^6.11.1",
     "bcrypt": "^6.0.0",
+    "file-type": "^21.0.0",
     "hono": "^4.8.4",
     "jsonwebtoken": "^9.0.2",
-    "prisma": "^6.11.1"
+    "minio": "^8.0.5",
+    "prisma": "^6.11.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

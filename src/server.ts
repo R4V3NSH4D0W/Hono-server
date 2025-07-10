@@ -7,6 +7,7 @@ import { timeout } from 'hono/timeout';
 
 import healthRoutes from './routes/health.js';
 import userRoutes from './routes/users.js';
+import imageRoutes from './routes/images.js';
 
 import {
   corsMiddleware,
@@ -14,7 +15,15 @@ import {
   rateLimitMiddleware,
 } from './middleware/cors.js';
 
+import { initializeStorage } from './services/storage/image-service.js';
+
 const app = new Hono();
+
+// Initialize MinIO storage
+initializeStorage().catch(error => {
+  console.error('Failed to initialize storage:', error);
+  process.exit(1);
+});
 
 app.use('*', logger());
 app.use('*', requestIdMiddleware);
@@ -41,6 +50,7 @@ app.get('/', c => {
 
 app.route('/health', healthRoutes);
 app.route('/api/users', userRoutes);
+app.route('/api/images', imageRoutes);
 
 app.notFound(c => {
   return c.json(
@@ -83,6 +93,19 @@ serve(
     );
     console.log(`   POST   /api/users/logout  - Logout user (requires auth)`);
     console.log(`   GET    /api/users/logout  - Logout user (requires auth)`);
+    console.log(
+      `   POST   /api/images/upload - Upload single image (requires auth)`
+    );
+    console.log(
+      `   POST   /api/images/avatar - Upload user avatar (requires auth)`
+    );
+    console.log(
+      `   POST   /api/images/post   - Upload post images (requires auth)`
+    );
+    console.log(
+      `   POST   /api/images/post/:postId - Add images to existing post (requires auth)`
+    );
     console.log(`🗄️  Database: PostgreSQL with Prisma ORM`);
+    console.log(`🗂️  Storage: MinIO S3-compatible object storage`);
   }
 );

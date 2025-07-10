@@ -1,6 +1,6 @@
-# Hono Server with JWT Authentication
+# Hono Server with JWT Authentication and File Uploads
 
-A clean, organized REST API built with Hono framework, TypeScript, PostgreSQL, and Prisma ORM featuring JWT authentication.
+A clean, organized REST API built with Hono framework, TypeScript, PostgreSQL, and Prisma ORM featuring JWT authentication and MinIO-based file uploads.
 
 ## Project Structure
 
@@ -9,12 +9,16 @@ src/
 ├── server.ts         # Main server entry point
 ├── routes/           # Route handlers
 │   ├── health.ts     # Health check endpoints
-│   └── users.ts      # User management endpoints
+│   ├── users.ts      # User management endpoints
+│   └── images.ts     # Image upload endpoints
 ├── middleware/       # Middleware functions
 │   ├── cors.ts       # CORS and other middleware
 │   └── auth.ts       # JWT authentication middleware
 ├── services/         # Business logic layer
-│   └── user.ts       # User service with password hashing
+│   ├── user.ts       # User service with password hashing
+│   └── storage/      # Storage services
+│       ├── minio-config.ts  # MinIO client configuration
+│       └── image-service.ts # Image upload helper functions
 ├── lib/              # Shared libraries
 │   └── prisma.ts     # Prisma client initialization
 ├── types/            # TypeScript type definitions
@@ -34,12 +38,19 @@ src/
 ### Protected Endpoints (Requires JWT)
 
 - `GET /api/users/profile` - Get current user profile (authenticated user)
+- `POST /api/images/upload` - Upload a single image
+- `POST /api/images/avatar` - Upload user avatar
+- `POST /api/images/post` - Upload images with new post
+- `POST /api/images/post/:postId` - Add images to existing post
 
 ## Development
 
 ```bash
 # Install dependencies
 npm install
+
+# Setup storage for uploads (creates directories and starts MinIO if Docker is available)
+./setup-storage.sh
 
 # Start development server (with hot reload)
 npm run dev
@@ -85,6 +96,14 @@ curl http://localhost:3000/health
 - ✅ Request logging
 - ✅ Error handling
 - ✅ Format on save (VS Code)
+- ✅ File uploads with MinIO (S3-compatible storage)
+- ✅ Image processing and validation
+- ✅ User avatar support
+- ✅ Post image attachments
+
+## Image Upload API
+
+See [IMAGE-API.md](IMAGE-API.md) for detailed documentation on the image upload endpoints.
 
 ## CORS Configuration
 
@@ -157,4 +176,65 @@ curl -X GET http://localhost:3000/api/users/profile \
 - **JWT Authentication**: Secure token-based authentication for protected routes
 - **Environment Variables**: Sensitive configuration like JWT_SECRET stored in environment variables
 - **Token Expiration**: JWT tokens expire after 7 days by default
-# Hono-server
+
+## File Uploads
+
+This API supports file uploads using MinIO object storage. The `/api/images` endpoint allows authenticated users to upload and manage images.
+
+### Upload Image
+
+```bash
+curl -X POST http://localhost:3000/api/images \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -F "image=@/path/to/your/image.jpg"
+```
+
+### Get Image Metadata
+
+```bash
+curl -X GET http://localhost:3000/api/images/IMAGE_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### Delete Image
+
+```bash
+curl -X DELETE http://localhost:3000/api/images/IMAGE_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### List User Images
+
+```bash
+curl -X GET http://localhost:3000/api/images \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+## MinIO Configuration
+
+MinIO is used for file storage. Configure MinIO settings in `src/services/storage/minio-config.ts`.
+
+- **Endpoint**: MinIO server URL
+- **Access Key**: MinIO access key
+- **Secret Key**: MinIO secret key
+- **Bucket Name**: Default bucket for uploads
+
+### Local MinIO Setup
+
+For local development, you can run MinIO in a Docker container:
+
+```bash
+docker run -p 9000:9000 -p 9001:9001 \
+  --name minio \
+  -e "MINIO_ACCESS_KEY=youraccesskey" \
+  -e "MINIO_SECRET_KEY=yoursecretkey" \
+  minio/minio server /data --console-address ":9001"
+```
+
+Access MinIO console at [http://localhost:9001](http://localhost:9001) with the access and secret keys configured above.
+
+## Troubleshooting
+
+- **CORS Issues**: Ensure `ALLOWED_ORIGINS` is set correctly in production.
+- **JWT Errors**: Check `JWT_SECRET` and token expiration settings.
+- **File Uploads**: Verify MinIO server is running and accessible.

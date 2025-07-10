@@ -17,3 +17,28 @@ export interface ApiResponse<T = unknown> {
   message?: string;
   count?: number;
 }
+
+// File upload related types
+export interface UploadedImage {
+  id: string;
+  filename: string;
+  path: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  bucket: string;
+  createdAt: string;
+}
+
+// Extend Hono request type with custom properties
+declare module 'hono' {
+  interface ContextVariableMap {
+    user: { id: string; email: string; role: string };
+  }
+
+  interface HonoRequest {
+    user: { id: string; email: string; role: string };
+    files?: Record<string, { buffer: Buffer; originalFilename: string }[]>;
+    fields?: Record<string, string>;
+  }
+}
