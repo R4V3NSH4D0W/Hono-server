@@ -9,6 +9,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import healthRoutes from './routes/health.js';
 import userRoutes from './routes/users.js';
 import uploadRoutes from './routes/upload.js';
+import authRoutes from './routes/auth.js';
 
 import {
   corsMiddleware,
@@ -47,18 +48,28 @@ app.get('/', c => {
     message: 'Welcome to Hono API with Prisma',
     version: '1.0.0',
     endpoints: {
-      users: '/api/users',
-      login: '/api/users/login',
-      profile: {
-        get: '/api/users/profile',
-        update: '/api/users/profile',
+      auth: {
+        register: '/api/auth/register',
+        login: '/api/auth/login',
+        logout: '/api/auth/logout',
+        refreshToken: '/api/auth/refresh-token',
+        forgotPassword: '/api/auth/forgot-password',
+        resetPassword: '/api/auth/reset-password',
       },
-      addresses: {
-        list: '/api/users/address',
-        create: '/api/users/address',
-        delete: '/api/users/address/:id',
+      users: {
+        profile: {
+          get: '/api/users/profile',
+          update: '/api/users/profile',
+        },
+        addresses: {
+          list: '/api/users/address',
+          create: '/api/users/address',
+          delete: '/api/users/address/:id',
+        },
+        admin: {
+          getAllUsers: '/api/users/getAll',
+        },
       },
-      logout: '/api/users/logout',
       uploads: {
         avatar: '/api/uploads/avatar',
         postImages: '/api/uploads/post/:postId/images',
@@ -73,6 +84,7 @@ app.get('/', c => {
 });
 
 app.route('/health', healthRoutes);
+app.route('/api/auth', authRoutes);
 app.route('/api/users', userRoutes);
 app.route('/api/uploads', uploadRoutes);
 
