@@ -1,10 +1,5 @@
 import { prisma } from '../lib/prisma.js';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import type { Secret, SignOptions } from 'jsonwebtoken';
-
-const JWT_SECRET: Secret = process.env.JWT_SECRET || 'JWT_TOKEN_SECRET_KEY';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 import type { User } from '../generated/prisma/index.js';
 export const userService = {
@@ -97,21 +92,10 @@ export const userService = {
         return { success: false, error: 'Invalid email or password' };
       }
 
-      const token = jwt.sign(
-        {
-          userId: user.id,
-          email: user.email,
-          username: user.username,
-          role: user.role,
-        },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN } as SignOptions
-      );
-
+      // Return user data (auth service will handle token generation)
       return {
         success: true,
         data: {
-          token,
           user: {
             id: user.id,
             email: user.email,

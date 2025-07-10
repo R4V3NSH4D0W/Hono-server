@@ -2,10 +2,9 @@ import { Hono } from 'hono';
 import { userService } from '../services/user-service.js';
 import { passwordResetService } from '../services/password-reset-service.js';
 import { emailService } from '../services/email-service.js';
-import { authMiddleware, invalidateToken } from '../middleware/auth.js';
+import { authService } from '../services/auth-service.js';
+import { authMiddleware } from '../middleware/auth.js';
 import { prisma } from '../lib/prisma.js';
-import jwt from 'jsonwebtoken';
-import type { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
 const authRoutes = new Hono();
@@ -82,7 +81,7 @@ authRoutes.post('/login', async c => {
 
     const result = await userService.login(email, password);
 
-    if (!result.success) {
+    if (!result.success || !result.data) {
       return c.json(
         {
           success: false,
@@ -92,10 +91,22 @@ authRoutes.post('/login', async c => {
       );
     }
 
+    // Generate tokens using auth service
+    const deviceInfo = authService.extractDeviceInfo(c.req.header());
+    const tokens = await authService.generateTokenPair(
+      result.data.user,
+      deviceInfo
+    );
+
     return c.json(
       {
         success: true,
-        data: result.data,
+        data: {
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresIn: tokens.accessTokenExpiresIn,
+          user: result.data.user,
+        },
         message: 'Login successful',
       },
       200
@@ -116,9 +127,10 @@ authRoutes.post('/login', async c => {
 // Logout user
 authRoutes.post('/logout', authMiddleware, async c => {
   try {
-    const token = c.get('token');
+    const user = c.get('user');
 
-    invalidateToken(token);
+    // Revoke all refresh tokens for this user
+    await authService.revokeAllUserTokens(user.userId);
 
     return c.json(
       {
@@ -141,35 +153,60 @@ authRoutes.post('/logout', authMiddleware, async c => {
 });
 
 // Refresh token
-authRoutes.post('/refresh-token', authMiddleware, async c => {
+authRoutes.post('/refresh-token', async c => {
   try {
-    const { userId, email, username, role } = c.get('user');
+    const { refreshToken } = await c.req.json();
 
-    // Generate new token with the same user data
-    const JWT_SECRET = process.env.JWT_SECRET || 'JWT_TOKEN_SECRET_KEY';
-    const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+    if (!refreshToken) {
+      return c.json(
+        {
+          success: false,
+          error: 'Refresh token is required',
+        },
+        400
+      );
+    }
 
-    const newToken = jwt.sign(
-      {
-        userId,
-        email,
-        username,
-        role,
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN } as SignOptions
+    // Use auth service to refresh tokens
+    const deviceInfo = authService.extractDeviceInfo(c.req.header());
+
+    // Get the refresh token record to access user data
+    const refreshTokenRecord = await prisma.refreshToken.findUnique({
+      where: { token: refreshToken },
+      include: { user: true },
+    });
+
+    if (
+      !refreshTokenRecord ||
+      refreshTokenRecord.isRevoked ||
+      refreshTokenRecord.expiresAt < new Date()
+    ) {
+      return c.json(
+        {
+          success: false,
+          error: 'Invalid or expired refresh token',
+        },
+        401
+      );
+    }
+
+    const newTokens = await authService.refreshAccessToken(
+      refreshToken,
+      deviceInfo
     );
 
     return c.json(
       {
         success: true,
         data: {
-          token: newToken,
+          accessToken: newTokens.accessToken,
+          refreshToken: newTokens.refreshToken,
+          expiresIn: newTokens.accessTokenExpiresIn,
           user: {
-            id: userId,
-            email,
-            username,
-            role,
+            id: refreshTokenRecord.user.id,
+            email: refreshTokenRecord.user.email,
+            username: refreshTokenRecord.user.username,
+            role: refreshTokenRecord.user.role,
           },
         },
         message: 'Token refreshed successfully',
@@ -178,6 +215,23 @@ authRoutes.post('/refresh-token', authMiddleware, async c => {
     );
   } catch (error) {
     console.error('Error refreshing token:', error);
+
+    if (error instanceof Error) {
+      // Handle specific refresh token errors
+      if (
+        error.message.includes('Invalid') ||
+        error.message.includes('expired')
+      ) {
+        return c.json(
+          {
+            success: false,
+            error: 'Invalid or expired refresh token',
+          },
+          401
+        );
+      }
+    }
+
     return c.json(
       {
         success: false,
