@@ -26,8 +26,21 @@ app.use('*', corsMiddleware);
 app.use('*', rateLimitMiddleware(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
 app.use('*', prettyJSON());
 
-// Serve static files from the public directory
 app.use('/uploads/*', serveStatic({ root: './public' }));
+app.use(
+  '/api/avatars/*',
+  serveStatic({
+    root: './public/avatars',
+    rewriteRequestPath: path => path.replace('/api/avatars', ''),
+  })
+);
+app.use(
+  '/api/posts/*',
+  serveStatic({
+    root: './public/posts',
+    rewriteRequestPath: path => path.replace('/api/posts', ''),
+  })
+);
 app.use('/demo/*', serveStatic({ root: './public/html' }));
 
 app.get('/', c => {
@@ -42,6 +55,10 @@ app.get('/', c => {
       uploads: {
         avatar: '/api/uploads/avatar',
         postImages: '/api/uploads/post/:postId/images',
+      },
+      static: {
+        avatars: '/api/avatars/{filename}',
+        postImages: '/api/posts/{postId}/{filename}',
       },
       health: '/health',
     },
@@ -83,16 +100,5 @@ serve(
   },
   info => {
     console.log(`🚀 Server is running on http://localhost:${info.port}`);
-    console.log(`📖 Available endpoints:`);
-    console.log(`   GET    /health           - Health check`);
-    console.log(`   GET    /api/users        - Get all users`);
-    console.log(`   POST   /api/users        - Create user`);
-    console.log(`   POST   /api/users/login  - Login with email/password`);
-    console.log(
-      `   GET    /api/users/profile - Get user profile (requires auth)`
-    );
-    console.log(`   POST   /api/users/logout  - Logout user (requires auth)`);
-    console.log(`   GET    /api/users/logout  - Logout user (requires auth)`);
-    console.log(`🗄️  Database: PostgreSQL with Prisma ORM`);
   }
 );

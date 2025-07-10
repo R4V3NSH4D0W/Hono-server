@@ -5,13 +5,10 @@ import { prisma } from '../lib/prisma.js';
 
 const uploadRoutes = new Hono();
 
-// Middleware to require authentication for all upload routes
 uploadRoutes.use('*', authMiddleware);
 
-// Upload user avatar
 uploadRoutes.post('/avatar', async c => {
   try {
-    // Get user ID from JWT token (set by authMiddleware)
     const user = c.get('user');
 
     if (!user || !user.userId) {
@@ -28,7 +25,6 @@ uploadRoutes.post('/avatar', async c => {
     const userId = user.userId;
     console.log(`Attempting to upload avatar for user ID: ${userId}`);
 
-    // Check if the user exists in the database before trying to update
     const existingUser = await prisma.user.findUnique({
       where: { id: userId },
       select: { id: true },
@@ -65,15 +61,13 @@ uploadRoutes.post('/avatar', async c => {
   }
 });
 
-// Example route for uploading post images (assuming you have a Post model)
 uploadRoutes.post('/post/:postId/images', async c => {
   try {
     const postId = c.req.param('postId');
-    // In a real application, you would verify that the post exists and belongs to the user
 
     const imagePaths = await uploadService.uploadPostImages(c, {
       postId,
-      maxFiles: 5, // Allow up to 5 images per post
+      maxFiles: 5,
     });
 
     return c.json({

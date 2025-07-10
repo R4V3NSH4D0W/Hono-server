@@ -32,6 +32,9 @@ export const userService = {
     });
   },
   get: async (id: string) => {
+    if (!id) {
+      throw new Error('User ID is required');
+    }
     return prisma.user.findUnique({
       where: { id },
       select: {
