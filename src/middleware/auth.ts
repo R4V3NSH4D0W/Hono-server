@@ -13,10 +13,20 @@ interface JWTPayload {
   role: string;
 }
 
+// Token blacklist for logout functionality
+// In production, this should use Redis or another persistent store
+export const tokenBlacklist = new Set<string>();
+
+// Function to add a token to the blacklist
+export const invalidateToken = (token: string): void => {
+  tokenBlacklist.add(token);
+};
+
 // Extend Hono's Context to include the authenticated user
 declare module 'hono' {
   interface ContextVariableMap {
     user: JWTPayload;
+    token: string; // Add token to context for logout functionality
   }
 }
 
@@ -38,12 +48,24 @@ export const authMiddleware = async (c: Context, next: Next) => {
   // Extract token from header
   const token = authHeader.split(' ')[1];
 
+  // Check if token is blacklisted
+  if (tokenBlacklist.has(token)) {
+    return c.json(
+      {
+        success: false,
+        error: 'Token has been invalidated',
+      },
+      401
+    );
+  }
+
   try {
     // Verify JWT token
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
     // Attach user info to context for use in route handlers
     c.set('user', decoded);
+    c.set('token', token); // Store token in context for logout functionality
 
     await next();
   } catch {
