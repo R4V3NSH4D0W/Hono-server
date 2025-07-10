@@ -310,7 +310,7 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/db
 
 Now that you understand the authentication system, explore these related topics:
 
-1. **[JWT Implementation Details](jwt-tokens.md)** - Deep dive into token mechanics
+1. **[JWT Implementation Details](JWT_TOKEN.md)** - Deep dive into token mechanics
 2. **[Password Management](password-management.md)** - Reset, change, and security
 3. **[User Registration](user-registration.md)** - Complete user management
 4. **[API Integration](../api/endpoints.md)** - Use the authentication endpoints
