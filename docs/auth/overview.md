@@ -5,6 +5,7 @@ Welcome to the comprehensive guide on the modern authentication system powering 
 ## 🎯 What You'll Learn
 
 By the end of this guide, you'll understand:
+
 - How modern authentication works
 - Why we use JWT with refresh tokens
 - The complete user journey from registration to logout
@@ -16,6 +17,7 @@ By the end of this guide, you'll understand:
 ### **The Problem We Solve**
 
 Traditional authentication systems often face these challenges:
+
 - **Security vs Convenience**: Long-lived tokens are convenient but risky
 - **User Experience**: Frequent re-logins frustrate users
 - **Scalability**: Server-side sessions don't scale well
@@ -51,6 +53,7 @@ We've implemented a sophisticated yet simple system that balances security, user
 ## 🔑 Token Types Explained
 
 ### **Access Token (Short-lived - 15 minutes)**
+
 ```json
 {
   "userId": "cm123456789",
@@ -68,6 +71,7 @@ We've implemented a sophisticated yet simple system that balances security, user
 **Security**: Short lifespan limits damage if compromised
 
 ### **Refresh Token (Long-lived - 7 days)**
+
 ```json
 {
   "id": "refresh_token_unique_id",
@@ -87,11 +91,13 @@ We've implemented a sophisticated yet simple system that balances security, user
 ## 🚀 User Journey Walkthrough
 
 ### **1. User Registration**
+
 ```
 User fills form → Validation → Password hashing → Database storage → Success response
 ```
 
 **What happens behind the scenes:**
+
 - Email uniqueness check
 - Password strength validation
 - Secure password hashing with bcrypt
@@ -99,11 +105,13 @@ User fills form → Validation → Password hashing → Database storage → Suc
 - Clean response (no sensitive data)
 
 ### **2. User Login**
+
 ```
 Credentials → Validation → Token generation → Database storage → Token pair response
 ```
 
 **The magic behind login:**
+
 - Credential verification
 - Device fingerprinting
 - Access token generation (JWT)
@@ -112,11 +120,13 @@ Credentials → Validation → Token generation → Database storage → Token p
 - Response with both tokens
 
 ### **3. Making Authenticated Requests**
+
 ```
 Request + Access Token → Token verification → Protected resource access
 ```
 
 **Every protected request:**
+
 - Bearer token extraction
 - JWT signature verification
 - Token expiry check
@@ -124,11 +134,13 @@ Request + Access Token → Token verification → Protected resource access
 - Resource access granted
 
 ### **4. Token Refresh (Automatic)**
+
 ```
 Refresh token → Validation → New token pair → Old token invalidation
 ```
 
 **Seamless token renewal:**
+
 - Refresh token lookup in database
 - Expiry and revocation checks
 - New token pair generation
@@ -136,11 +148,13 @@ Refresh token → Validation → New token pair → Old token invalidation
 - Fresh credentials returned
 
 ### **5. Logout (Secure)**
+
 ```
 Logout request → Token revocation → Database cleanup → Success response
 ```
 
 **Complete session termination:**
+
 - All user refresh tokens revoked
 - Database cleanup
 - Client-side token clearing
@@ -172,28 +186,29 @@ Logout request → Token revocation → Database cleanup → Success response
 
 ### **Attack Prevention**
 
-| Attack Type | Our Protection |
-|-------------|----------------|
-| XSS | Access tokens in memory only |
-| CSRF | Stateless JWT with proper headers |
-| Token Theft | Short-lived tokens + rotation |
-| Session Hijacking | Device fingerprinting |
-| Brute Force | Rate limiting + account lockout |
+| Attack Type       | Our Protection                    |
+| ----------------- | --------------------------------- |
+| XSS               | Access tokens in memory only      |
+| CSRF              | Stateless JWT with proper headers |
+| Token Theft       | Short-lived tokens + rotation     |
+| Session Hijacking | Device fingerprinting             |
+| Brute Force       | Rate limiting + account lockout   |
 
 ## 💻 Implementation Examples
 
 ### **Frontend Integration (React)**
+
 ```javascript
 // Login
 const login = async (email, password) => {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ email, password }),
   });
-  
+
   const data = await response.json();
-  
+
   if (data.success) {
     // Store tokens securely
     localStorage.setItem('refreshToken', data.data.refreshToken);
@@ -208,11 +223,11 @@ const refreshToken = async () => {
   const response = await fetch('/api/auth/refresh-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken })
+    body: JSON.stringify({ refreshToken }),
   });
-  
+
   const data = await response.json();
-  
+
   if (data.success) {
     setAccessToken(data.data.accessToken);
     localStorage.setItem('refreshToken', data.data.refreshToken);
@@ -221,26 +236,27 @@ const refreshToken = async () => {
 ```
 
 ### **API Request with Auto-Refresh**
+
 ```javascript
 const apiCall = async (endpoint, options = {}) => {
-  const makeRequest = async (token) => {
+  const makeRequest = async token => {
     return fetch(endpoint, {
       ...options,
       headers: {
         ...options.headers,
-        'Authorization': `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
   };
-  
+
   let response = await makeRequest(accessToken);
-  
+
   if (response.status === 401) {
     // Token expired, refresh it
     await refreshToken();
     response = await makeRequest(accessToken);
   }
-  
+
   return response;
 };
 ```
@@ -248,6 +264,7 @@ const apiCall = async (endpoint, options = {}) => {
 ## 🔧 Configuration Benefits
 
 ### **Environment Variables**
+
 ```bash
 # Security Configuration
 JWT_SECRET=your_256_bit_secret_key
@@ -260,6 +277,7 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/db
 ```
 
 ### **Customizable Settings**
+
 - Token expiration times
 - Password complexity requirements
 - Rate limiting thresholds
@@ -268,18 +286,21 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/db
 ## 🎯 Why Choose This System?
 
 ### **For Users**
+
 - ✅ Seamless experience (auto-refresh)
 - ✅ Secure authentication
 - ✅ Multi-device support
 - ✅ Quick login/logout
 
 ### **For Developers**
+
 - ✅ Simple integration
 - ✅ Comprehensive error handling
 - ✅ Clear documentation
 - ✅ Production-ready code
 
 ### **For Businesses**
+
 - ✅ Industry-standard security
 - ✅ Scalable architecture
 - ✅ Audit compliance ready

@@ -5,6 +5,7 @@ This guide provides a comprehensive understanding of how JWT (JSON Web Tokens) a
 ## 🎯 What You'll Master
 
 By the end of this guide, you'll understand:
+
 - How JWT tokens are structured and validated
 - The refresh token mechanism and rotation strategy
 - Token lifecycle management
@@ -16,21 +17,27 @@ By the end of this guide, you'll understand:
 ### **The Evolution of Authentication**
 
 **Traditional Sessions (Old Way)**
+
 ```
 User Login → Server creates session → Session ID in cookie → Server memory storage
 ```
+
 ❌ **Problems**: Memory usage, scalability issues, server-side state
 
 **JWT Tokens (Modern Way)**
+
 ```
 User Login → Server creates JWT → Token sent to client → Stateless verification
 ```
+
 ✅ **Benefits**: Stateless, scalable, cross-domain support
 
 **JWT + Refresh Tokens (Our Way)**
+
 ```
 User Login → Two tokens created → Short-lived access + Long-lived refresh → Secure rotation
 ```
+
 ✅ **Best of Both**: Security + User experience + Scalability
 
 ## 🏗️ Token Architecture Deep Dive
@@ -57,6 +64,7 @@ User Login → Two tokens created → Short-lived access + Long-lived refresh �
 ```
 
 **Field Explanations:**
+
 - `userId`: Unique user identifier
 - `email`: User's email address
 - `username`: Display name
@@ -84,6 +92,7 @@ CREATE TABLE refresh_tokens (
 ```
 
 **Why Database Storage?**
+
 - Centralized revocation control
 - Audit trail for security
 - Session management capabilities
@@ -95,7 +104,10 @@ CREATE TABLE refresh_tokens (
 
 ```typescript
 // Our implementation
-const generateTokenPair = async (user: UserData, tokenInfo?: RefreshTokenInfo) => {
+const generateTokenPair = async (
+  user: UserData,
+  tokenInfo?: RefreshTokenInfo
+) => {
   // Create access token (JWT)
   const accessToken = jwt.sign(
     {
@@ -103,7 +115,7 @@ const generateTokenPair = async (user: UserData, tokenInfo?: RefreshTokenInfo) =
       email: user.email,
       username: user.username,
       role: user.role,
-      type: 'access'
+      type: 'access',
     },
     JWT_SECRET,
     { expiresIn: '15m' }
@@ -111,7 +123,7 @@ const generateTokenPair = async (user: UserData, tokenInfo?: RefreshTokenInfo) =
 
   // Create refresh token (random secure hash)
   const refreshTokenValue = crypto.randomBytes(32).toString('hex');
-  
+
   // Store refresh token in database
   await prisma.refreshToken.create({
     data: {
@@ -120,15 +132,15 @@ const generateTokenPair = async (user: UserData, tokenInfo?: RefreshTokenInfo) =
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       deviceInfo: tokenInfo?.deviceInfo,
       ipAddress: tokenInfo?.ipAddress,
-      userAgent: tokenInfo?.userAgent
-    }
+      userAgent: tokenInfo?.userAgent,
+    },
   });
 
   return {
     accessToken,
     refreshToken: refreshTokenValue,
     accessTokenExpiresIn: '15m',
-    refreshTokenExpiresIn: '7d'
+    refreshTokenExpiresIn: '7d',
   };
 };
 ```
@@ -140,18 +152,18 @@ const generateTokenPair = async (user: UserData, tokenInfo?: RefreshTokenInfo) =
 const validateAccessToken = (token: string) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    
+
     // Check token type
     if (decoded.type !== 'access') {
       throw new Error('Invalid token type');
     }
-    
+
     // Token is valid, return user info
     return {
       userId: decoded.userId,
       email: decoded.email,
       username: decoded.username,
-      role: decoded.role
+      role: decoded.role,
     };
   } catch (error) {
     throw new Error('Invalid or expired token');
@@ -162,7 +174,7 @@ const validateAccessToken = (token: string) => {
 const validateRefreshToken = async (refreshToken: string) => {
   const tokenRecord = await prisma.refreshToken.findUnique({
     where: { token: refreshToken },
-    include: { user: true }
+    include: { user: true },
   });
 
   if (!tokenRecord) {
@@ -184,19 +196,22 @@ const validateRefreshToken = async (refreshToken: string) => {
 ### **3. Token Refresh Process (Rotation)**
 
 ```typescript
-const refreshAccessToken = async (refreshTokenValue: string, tokenInfo?: RefreshTokenInfo) => {
+const refreshAccessToken = async (
+  refreshTokenValue: string,
+  tokenInfo?: RefreshTokenInfo
+) => {
   // Validate refresh token
   const refreshToken = await validateRefreshToken(refreshTokenValue);
-  
+
   // Generate new token pair
   const newTokens = await generateTokenPair(refreshToken.user, tokenInfo);
-  
+
   // Invalidate old refresh token (rotation for security)
   await prisma.refreshToken.update({
     where: { id: refreshToken.id },
-    data: { isRevoked: true }
+    data: { isRevoked: true },
   });
-  
+
   return newTokens;
 };
 ```
@@ -214,6 +229,7 @@ Access Token B expires → Refresh with Token B → New Token Pair C (Token B in
 ```
 
 **Why Rotation?**
+
 - Prevents token replay attacks
 - Limits damage if refresh token is compromised
 - Provides audit trail of token usage
@@ -229,7 +245,7 @@ app.use('*', (c, next) => {
   c.header('X-Frame-Options', 'DENY');
   c.header('X-XSS-Protection', '1; mode=block');
   c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  
+
   return next();
 });
 ```
@@ -259,7 +275,7 @@ const useAuth = () => {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
@@ -267,10 +283,10 @@ const useAuth = () => {
       if (data.success) {
         setAccessToken(data.data.accessToken);
         setUser(data.data.user);
-        
+
         // Store refresh token securely
         localStorage.setItem('refreshToken', data.data.refreshToken);
-        
+
         return { success: true, user: data.data.user };
       }
 
@@ -288,7 +304,7 @@ const useAuth = () => {
       const response = await fetch('/api/auth/refresh-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken })
+        body: JSON.stringify({ refreshToken }),
       });
 
       const data = await response.json();
@@ -314,7 +330,7 @@ const useAuth = () => {
       if (accessToken) {
         await fetch('/api/auth/logout', {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${accessToken}` }
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
       }
     } catch (error) {
@@ -334,7 +350,7 @@ const useAuth = () => {
 
 ```typescript
 // Request interceptor
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(config => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -344,8 +360,8 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor for auto-refresh
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -387,7 +403,7 @@ const decodeJWT = (token: string) => {
       header,
       payload,
       signature: parts[2],
-      expired: payload.exp * 1000 < Date.now()
+      expired: payload.exp * 1000 < Date.now(),
     };
   } catch (error) {
     throw new Error('Failed to decode JWT');
@@ -419,7 +435,7 @@ const getTokenInfo = (token: string) => {
     role: decoded.payload.role,
     issuedAt: new Date(decoded.payload.iat * 1000),
     expiresAt: new Date(decoded.payload.exp * 1000),
-    timeToExpiry: getTokenTimeToExpiry(token)
+    timeToExpiry: getTokenTimeToExpiry(token),
   };
 };
 ```
@@ -433,10 +449,10 @@ const getTokenInfo = (token: string) => {
 const createMinimalToken = (user: UserData) => {
   return jwt.sign(
     {
-      sub: user.id,        // Standard claim for user ID
+      sub: user.id, // Standard claim for user ID
       email: user.email,
       role: user.role,
-      type: 'access'
+      type: 'access',
     },
     JWT_SECRET,
     { expiresIn: '15m' }
@@ -452,13 +468,13 @@ const secureLogout = () => {
   // Clear from state
   setAccessToken(null);
   setUser(null);
-  
+
   // Clear from localStorage
   localStorage.removeItem('refreshToken');
-  
+
   // Clear from sessionStorage if used
   sessionStorage.clear();
-  
+
   // Clear from any global variables
   window.authToken = null;
 };
@@ -475,14 +491,14 @@ const getUserSessions = async (userId: string) => {
     where: {
       userId,
       isRevoked: false,
-      expiresAt: { gt: new Date() }
+      expiresAt: { gt: new Date() },
     },
     select: {
       id: true,
       deviceInfo: true,
       ipAddress: true,
-      createdAt: true
-    }
+      createdAt: true,
+    },
   });
 };
 
@@ -490,7 +506,7 @@ const getUserSessions = async (userId: string) => {
 const revokeSession = async (sessionId: string) => {
   await prisma.refreshToken.update({
     where: { id: sessionId },
-    data: { isRevoked: true }
+    data: { isRevoked: true },
   });
 };
 ```
@@ -501,21 +517,21 @@ const revokeSession = async (sessionId: string) => {
 // For additional security, maintain a blacklist of revoked tokens
 const blacklistToken = async (token: string) => {
   const decoded = decodeJWT(token);
-  
+
   await prisma.blacklistedToken.create({
     data: {
       token: token,
-      expiresAt: new Date(decoded.payload.exp * 1000)
-    }
+      expiresAt: new Date(decoded.payload.exp * 1000),
+    },
   });
 };
 
 // Check if token is blacklisted
 const isTokenBlacklisted = async (token: string): Promise<boolean> => {
   const blacklisted = await prisma.blacklistedToken.findUnique({
-    where: { token }
+    where: { token },
   });
-  
+
   return !!blacklisted;
 };
 ```
@@ -523,18 +539,21 @@ const isTokenBlacklisted = async (token: string): Promise<boolean> => {
 ## 🎯 Best Practices Summary
 
 ### **Token Storage**
+
 - ✅ Access tokens: Memory or secure HTTP-only cookies
 - ✅ Refresh tokens: localStorage or secure HTTP-only cookies
 - ❌ Never store tokens in regular cookies without security flags
 - ❌ Never store sensitive tokens in URL parameters
 
 ### **Token Validation**
+
 - ✅ Always validate token signature
 - ✅ Check token expiration
 - ✅ Verify token type (access vs refresh)
 - ✅ Implement proper error handling
 
 ### **Security Measures**
+
 - ✅ Use HTTPS in production
 - ✅ Implement token rotation
 - ✅ Set appropriate expiration times
@@ -553,6 +572,7 @@ Now that you understand JWT and refresh token implementation:
 ## 💡 Key Takeaways
 
 This JWT + Refresh Token system provides:
+
 - **Security**: Short-lived access tokens with secure refresh mechanism
 - **Scalability**: Stateless authentication that scales horizontally
 - **User Experience**: Seamless token refresh without user interaction
