@@ -170,7 +170,7 @@ Authorization: Bearer <your-jwt-token>
 
 **Endpoint:** `POST /api/auth/forgot-password`  
 **Authentication:** Not required  
-**Description:** Send password reset email (placeholder implementation)
+**Description:** Send password reset email with secure token
 
 #### Request Body
 
@@ -189,30 +189,145 @@ Authorization: Bearer <your-jwt-token>
 }
 ```
 
+**Note:** Always returns success for security (doesn't reveal if email exists)
+
 ---
 
 ### 6. Reset Password
 
 **Endpoint:** `POST /api/auth/reset-password`  
 **Authentication:** Not required  
-**Description:** Reset password using reset token (placeholder implementation)
+**Description:** Reset password using secure reset token
 
 #### Request Body
 
 ```json
 {
-  "token": "reset-token-here",
+  "token": "a1b2c3d4e5f6...",
   "newPassword": "newSecurePassword123"
 }
 ```
 
-#### Response (501 - Not Implemented)
+#### Response Success (200)
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "clxxxx...",
+      "email": "user@example.com",
+      "username": "John Doe"
+    }
+  },
+  "message": "Password has been reset successfully"
+}
+```
+
+#### Response Error (400)
 
 ```json
 {
   "success": false,
-  "error": "Password reset functionality not yet implemented",
-  "message": "This feature is coming soon"
+  "error": "Invalid or expired reset token"
+}
+```
+
+---
+
+### 7. Validate Reset Token
+
+**Endpoint:** `GET /api/auth/reset-password/validate/:token`  
+**Authentication:** Not required  
+**Description:** Check if a reset token is valid (useful for frontend validation)
+
+#### URL Parameters
+
+- `token` (string): The reset token to validate
+
+#### Response Success (200)
+
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "expiresAt": "2025-07-10T16:40:22.000Z",
+    "user": {
+      "email": "user@example.com"
+    }
+  },
+  "message": "Reset token is valid"
+}
+```
+
+#### Response Error (400)
+
+```json
+{
+  "success": false,
+  "data": {
+    "valid": false
+  },
+  "error": "Reset token has expired"
+}
+```
+
+---
+
+### 8. Change Password
+
+**Endpoint:** `POST /api/auth/change-password`  
+**Authentication:** Required  
+**Description:** Change password for authenticated users who know their current password
+
+#### Request Body
+
+```json
+{
+  "currentPassword": "currentPassword123",
+  "newPassword": "newPassword456"
+}
+```
+
+#### Response Success (200)
+
+```json
+{
+  "success": true,
+  "message": "Password changed successfully"
+}
+```
+
+#### Response Error (400)
+
+```json
+{
+  "success": false,
+  "error": "Current password is incorrect"
+}
+```
+
+```json
+{
+  "success": false,
+  "error": "New password must be at least 6 characters long"
+}
+```
+
+```json
+{
+  "success": false,
+  "error": "New password must be different from current password"
+}
+```
+
+#### Response Error (401)
+
+```json
+{
+  "success": false,
+  "error": "Authentication required"
 }
 ```
 

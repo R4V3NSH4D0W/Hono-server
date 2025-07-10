@@ -55,6 +55,7 @@ app.get('/', c => {
         refreshToken: '/api/auth/refresh-token',
         forgotPassword: '/api/auth/forgot-password',
         resetPassword: '/api/auth/reset-password',
+        validateResetToken: '/api/auth/reset-password/validate/:token',
       },
       users: {
         profile: {

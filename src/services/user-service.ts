@@ -164,4 +164,18 @@ export const userService = {
       },
     });
   },
+
+  cleanupExpiredTokens: async () => {
+    try {
+      const { passwordResetService } = await import(
+        './password-reset-service.js'
+      );
+      const count = await passwordResetService.cleanupExpiredTokens();
+      console.log(`Cleaned up ${count} expired/used password reset tokens`);
+      return count;
+    } catch (error) {
+      console.error('Error cleaning up expired tokens:', error);
+      return 0;
+    }
+  },
 };
