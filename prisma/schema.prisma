@@ -33,5 +33,24 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  addresses Address[]
+
   @@map("users")
+}
+
+// Address model for user addresses
+model Address {
+  id        String   @id @default(cuid())
+  name      String
+  street    String
+  city      String
+  zip       String
+  phone     String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("addresses")
 }

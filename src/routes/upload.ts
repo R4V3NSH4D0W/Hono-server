@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { uploadService } from '../services/upload.js';
+import { uploadService } from '../services/upload-service.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { prisma } from '../lib/prisma.js';
 

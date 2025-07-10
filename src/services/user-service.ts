@@ -126,6 +126,30 @@ export const userService = {
     }
   },
 
+  updateProfile: async (
+    userId: string,
+    updateData: { username?: string; phone?: string }
+  ) => {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    return prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        phone: true,
+        avatar: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  },
+
   getAll: async () => {
     return prisma.user.findMany({
       select: {

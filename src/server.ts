@@ -41,7 +41,6 @@ app.use(
     rewriteRequestPath: path => path.replace('/api/posts', ''),
   })
 );
-app.use('/demo/*', serveStatic({ root: './public/html' }));
 
 app.get('/', c => {
   return c.json({
@@ -50,7 +49,15 @@ app.get('/', c => {
     endpoints: {
       users: '/api/users',
       login: '/api/users/login',
-      profile: '/api/users/profile',
+      profile: {
+        get: '/api/users/profile',
+        update: '/api/users/profile',
+      },
+      addresses: {
+        list: '/api/users/address',
+        create: '/api/users/address',
+        delete: '/api/users/address/:id',
+      },
       logout: '/api/users/logout',
       uploads: {
         avatar: '/api/uploads/avatar',
