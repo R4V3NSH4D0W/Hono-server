@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { userService } from '../services/user.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, invalidateToken } from '../middleware/auth.js';
 
 const userRoutes = new Hono();
 
@@ -154,6 +154,32 @@ userRoutes.get('/getAll', authMiddleware, async c => {
       {
         success: false,
         error: 'Failed to fetch users',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      500
+    );
+  }
+});
+
+userRoutes.post('/logout', authMiddleware, async c => {
+  try {
+    const token = c.get('token');
+
+    invalidateToken(token);
+
+    return c.json(
+      {
+        success: true,
+        message: 'Logout successful',
+      },
+      200
+    );
+  } catch (error) {
+    console.error('Error during logout:', error);
+    return c.json(
+      {
+        success: false,
+        error: 'Failed to logout',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       500

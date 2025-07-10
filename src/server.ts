@@ -18,7 +18,7 @@ const app = new Hono();
 
 app.use('*', logger());
 app.use('*', requestIdMiddleware);
-app.use('*', timeout(30000)); // 30 second timeout
+app.use('*', timeout(30000));
 app.use('*', secureHeaders());
 app.use('*', corsMiddleware);
 app.use('*', rateLimitMiddleware(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
@@ -33,6 +33,7 @@ app.get('/', c => {
       users: '/api/users',
       login: '/api/users/login',
       profile: '/api/users/profile',
+      logout: '/api/users/logout',
       health: '/health',
     },
   });
@@ -80,6 +81,8 @@ serve(
     console.log(
       `   GET    /api/users/profile - Get user profile (requires auth)`
     );
+    console.log(`   POST   /api/users/logout  - Logout user (requires auth)`);
+    console.log(`   GET    /api/users/logout  - Logout user (requires auth)`);
     console.log(`🗄️  Database: PostgreSQL with Prisma ORM`);
   }
 );
