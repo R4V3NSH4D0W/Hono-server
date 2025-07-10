@@ -4,9 +4,11 @@ import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
 import { secureHeaders } from 'hono/secure-headers';
 import { timeout } from 'hono/timeout';
+import { serveStatic } from '@hono/node-server/serve-static';
 
 import healthRoutes from './routes/health.js';
 import userRoutes from './routes/users.js';
+import uploadRoutes from './routes/upload.js';
 
 import {
   corsMiddleware,
@@ -23,7 +25,23 @@ app.use('*', secureHeaders());
 app.use('*', corsMiddleware);
 app.use('*', rateLimitMiddleware(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
 app.use('*', prettyJSON());
-app.use('*', prettyJSON());
+
+app.use('/uploads/*', serveStatic({ root: './public' }));
+app.use(
+  '/api/avatars/*',
+  serveStatic({
+    root: './public/avatars',
+    rewriteRequestPath: path => path.replace('/api/avatars', ''),
+  })
+);
+app.use(
+  '/api/posts/*',
+  serveStatic({
+    root: './public/posts',
+    rewriteRequestPath: path => path.replace('/api/posts', ''),
+  })
+);
+app.use('/demo/*', serveStatic({ root: './public/html' }));
 
 app.get('/', c => {
   return c.json({
@@ -34,6 +52,14 @@ app.get('/', c => {
       login: '/api/users/login',
       profile: '/api/users/profile',
       logout: '/api/users/logout',
+      uploads: {
+        avatar: '/api/uploads/avatar',
+        postImages: '/api/uploads/post/:postId/images',
+      },
+      static: {
+        avatars: '/api/avatars/{filename}',
+        postImages: '/api/posts/{postId}/{filename}',
+      },
       health: '/health',
     },
   });
@@ -41,6 +67,7 @@ app.get('/', c => {
 
 app.route('/health', healthRoutes);
 app.route('/api/users', userRoutes);
+app.route('/api/uploads', uploadRoutes);
 
 app.notFound(c => {
   return c.json(
@@ -73,16 +100,5 @@ serve(
   },
   info => {
     console.log(`🚀 Server is running on http://localhost:${info.port}`);
-    console.log(`📖 Available endpoints:`);
-    console.log(`   GET    /health           - Health check`);
-    console.log(`   GET    /api/users        - Get all users`);
-    console.log(`   POST   /api/users        - Create user`);
-    console.log(`   POST   /api/users/login  - Login with email/password`);
-    console.log(
-      `   GET    /api/users/profile - Get user profile (requires auth)`
-    );
-    console.log(`   POST   /api/users/logout  - Logout user (requires auth)`);
-    console.log(`   GET    /api/users/logout  - Logout user (requires auth)`);
-    console.log(`🗄️  Database: PostgreSQL with Prisma ORM`);
   }
 );
