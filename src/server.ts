@@ -4,9 +4,11 @@ import { logger } from 'hono/logger';
 import { prettyJSON } from 'hono/pretty-json';
 import { secureHeaders } from 'hono/secure-headers';
 import { timeout } from 'hono/timeout';
+import { serveStatic } from '@hono/node-server/serve-static';
 
 import healthRoutes from './routes/health.js';
 import userRoutes from './routes/users.js';
+import uploadRoutes from './routes/upload.js';
 
 import {
   corsMiddleware,
@@ -23,7 +25,10 @@ app.use('*', secureHeaders());
 app.use('*', corsMiddleware);
 app.use('*', rateLimitMiddleware(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
 app.use('*', prettyJSON());
-app.use('*', prettyJSON());
+
+// Serve static files from the public directory
+app.use('/uploads/*', serveStatic({ root: './public' }));
+app.use('/demo/*', serveStatic({ root: './public/html' }));
 
 app.get('/', c => {
   return c.json({
@@ -34,6 +39,10 @@ app.get('/', c => {
       login: '/api/users/login',
       profile: '/api/users/profile',
       logout: '/api/users/logout',
+      uploads: {
+        avatar: '/api/uploads/avatar',
+        postImages: '/api/uploads/post/:postId/images',
+      },
       health: '/health',
     },
   });
@@ -41,6 +50,7 @@ app.get('/', c => {
 
 app.route('/health', healthRoutes);
 app.route('/api/users', userRoutes);
+app.route('/api/uploads', uploadRoutes);
 
 app.notFound(c => {
   return c.json(
