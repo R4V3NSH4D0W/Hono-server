@@ -1,0 +1,114 @@
+{
+  "info": {
+    "name": "Refresh Token Flow",
+    "description": "Demonstrates how the refresh token mechanism works, including token rotation and error handling.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login (Get Token Pair)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"yourpassword\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/refresh-token",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "refresh-token"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Access Protected Resource (with Access Token)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/protected-resource",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "protected-resource"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Logout (Revoke Refresh Token)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "logout"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Set baseUrl, accessToken, and refreshToken as environment variables after login."
+        ],
+        "type": "text/javascript"
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "// After login, save accessToken and refreshToken to environment variables.",
+          "if (pm.request.url.path.join('/') === 'api/auth/login') {",
+          "  var jsonData = pm.response.json();",
+          "  if (jsonData.success) {",
+          "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+          "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
+          "  }",
+          "}",
+          "// After refresh, update tokens.",
+          "if (pm.request.url.path.join('/') === 'api/auth/refresh-token') {",
+          "  var jsonData = pm.response.json();",
+          "  if (jsonData.success) {",
+          "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+          "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
+          "  }",
+          "}",
+          "// On logout, clear tokens.",
+          "if (pm.request.url.path.join('/') === 'api/auth/logout') {",
+          "  pm.environment.unset('accessToken');",
+          "  pm.environment.unset('refreshToken');"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ]
+}

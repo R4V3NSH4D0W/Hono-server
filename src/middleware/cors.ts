@@ -9,6 +9,7 @@ const allowedOrigins = [
   'http://localhost:8080', // General development port
   'https://your-domain.com', // Production domain (replace with actual)
   'https://www.your-domain.com', // Production www domain (replace with actual)
+  'https://59cqvp91-3001.inc1.devtunnels.ms',
 ];
 
 // Environment-based origins
@@ -25,7 +26,6 @@ if (process.env.ALLOWED_ORIGINS) {
 
 export const corsMiddleware: MiddlewareHandler = async (c, next) => {
   const origin = c.req.header('Origin');
-
   // Check if origin is allowed
   const isAllowed =
     !origin ||
@@ -36,7 +36,6 @@ export const corsMiddleware: MiddlewareHandler = async (c, next) => {
   if (isAllowed && origin) {
     c.header('Access-Control-Allow-Origin', origin);
   }
-
   c.header(
     'Access-Control-Allow-Methods',
     'GET, POST, PUT, DELETE, PATCH, OPTIONS'
@@ -50,7 +49,8 @@ export const corsMiddleware: MiddlewareHandler = async (c, next) => {
 
   // Handle preflight requests
   if (c.req.method === 'OPTIONS') {
-    return new Response(null, { status: 204 });
+    // Always send CORS headers for OPTIONS
+    return new Response(null, { status: 204, headers: c.res.headers });
   }
 
   await next();

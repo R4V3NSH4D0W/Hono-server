@@ -4,7 +4,9 @@ import jwt from 'jsonwebtoken';
 import type { Secret, SignOptions } from 'jsonwebtoken';
 
 const JWT_SECRET: Secret = process.env.JWT_SECRET || 'JWT_TOKEN_SECRET_KEY';
-const ACCESS_TOKEN_EXPIRES = process.env.ACCESS_TOKEN_EXPIRES || '15m'; // Short-lived
+const ACCESS_TOKEN_EXPIRES = process.env.ACCESS_TOKEN_EXPIRES || '10s'; // Short-lived
+console.log('ACCESS_TOKEN_EXPIRES:', ACCESS_TOKEN_EXPIRES); // Debug log
+
 const REFRESH_TOKEN_EXPIRES = process.env.REFRESH_TOKEN_EXPIRES || '7d'; // Long-lived
 
 export interface TokenPair {

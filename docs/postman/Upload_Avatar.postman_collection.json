@@ -1,0 +1,66 @@
+{
+  "info": {
+    "name": "Avatar Upload API",
+    "description": "Testing collection for avatar upload endpoint(s)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Upload Avatar",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "avatar",
+              "type": "file",
+              "src": ""
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/uploads/avatar",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "uploads", "avatar"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Response has success true\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.success).to.eql(true);",
+              "    pm.expect(json.data).to.be.an('object');",
+              "    pm.expect(json.message).to.include('uploaded');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

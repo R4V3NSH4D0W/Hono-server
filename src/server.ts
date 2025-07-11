@@ -20,10 +20,10 @@ import {
 const app = new Hono();
 
 app.use('*', logger());
+app.use('*', corsMiddleware);
 app.use('*', requestIdMiddleware);
 app.use('*', timeout(30000));
 app.use('*', secureHeaders());
-app.use('*', corsMiddleware);
 app.use('*', rateLimitMiddleware(100, 15 * 60 * 1000)); // 100 requests per 15 minutes
 app.use('*', prettyJSON());
 
