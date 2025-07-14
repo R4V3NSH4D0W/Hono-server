@@ -1,6 +1,8 @@
 // Mock email service for development
 // In production, replace with actual email service (SendGrid, AWS SES, etc.)
 
+import nodemailer from 'nodemailer';
+
 export interface EmailOptions {
   to: string;
   subject: string;
@@ -62,7 +64,6 @@ export const emailService = {
       `,
     };
 
-    // In development, just log the email
     if (process.env.NODE_ENV === 'development') {
       console.log('=== EMAIL SENT (DEVELOPMENT MODE) ===');
       console.log('To:', emailOptions.to);
@@ -72,31 +73,24 @@ export const emailService = {
       return;
     }
 
-    // TODO: Implement actual email sending in production
-    // Example implementations:
+    // Production: Send email using Nodemailer and Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.NEXT_PUBLIC_EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
-    // For SendGrid:
-    // const sgMail = require('@sendgrid/mail');
-    // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    // await sgMail.send(emailOptions);
+    await transporter.sendMail({
+      from: `"Your App Name" <${process.env.NEXT_PUBLIC_EMAIL_USER}>`,
+      to: emailOptions.to,
+      subject: emailOptions.subject,
+      html: emailOptions.html,
+      text: emailOptions.text,
+    });
 
-    // For AWS SES:
-    // const AWS = require('aws-sdk');
-    // const ses = new AWS.SES({ region: process.env.AWS_REGION });
-    // await ses.sendEmail({
-    //   Source: process.env.FROM_EMAIL,
-    //   Destination: { ToAddresses: [emailOptions.to] },
-    //   Message: {
-    //     Subject: { Data: emailOptions.subject },
-    //     Body: {
-    //       Html: { Data: emailOptions.html },
-    //       Text: { Data: emailOptions.text }
-    //     }
-    //   }
-    // }).promise();
-
-    // For now, just log in production too
-    console.log('Email would be sent to:', emailOptions.to);
+    console.log('Email sent to:', emailOptions.to);
     console.log('Reset URL:', resetUrl);
   },
 

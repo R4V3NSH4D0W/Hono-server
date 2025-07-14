@@ -10,6 +10,7 @@ const allowedOrigins = [
   'https://your-domain.com', // Production domain (replace with actual)
   'https://www.your-domain.com', // Production www domain (replace with actual)
   'https://59cqvp91-3001.inc1.devtunnels.ms',
+  'http://localhost:5555', // React development server
 ];
 
 // Environment-based origins

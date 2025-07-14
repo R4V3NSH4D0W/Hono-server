@@ -98,6 +98,15 @@ authRoutes.post('/login', async c => {
       deviceInfo
     );
 
+    // Set cookies for auth_token and refresh_token
+    // c.header(
+    //   'Set-Cookie',
+    //   `auth_token=${tokens.accessToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`
+    // );
+    // c.header(
+    //   'Set-Cookie',
+    //   `refresh_token=${tokens.refreshToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`
+    // );
     return c.json(
       {
         success: true,
@@ -195,6 +204,15 @@ authRoutes.post('/refresh-token', async c => {
       deviceInfo
     );
 
+    // Set cookies for auth_token and refresh_token
+    c.header(
+      'Set-Cookie',
+      `auth_token=${newTokens.accessToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=3600`
+    );
+    c.header(
+      'Set-Cookie',
+      `refresh_token=${newTokens.refreshToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`
+    );
     return c.json(
       {
         success: true,
