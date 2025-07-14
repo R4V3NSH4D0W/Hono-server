@@ -16,6 +16,7 @@ import {
   requestIdMiddleware,
   rateLimitMiddleware,
 } from './middleware/cors.js';
+import map from './routes/map.js';
 
 const app = new Hono();
 
@@ -88,6 +89,7 @@ app.route('/health', healthRoutes);
 app.route('/api/auth', authRoutes);
 app.route('/api/users', userRoutes);
 app.route('/api/uploads', uploadRoutes);
+app.route('/api/map', map);
 
 app.notFound(c => {
   return c.json(
